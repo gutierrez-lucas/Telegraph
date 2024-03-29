@@ -37,10 +37,10 @@ BUILD_DIR = build
 # C sources
 C_SOURCES =  \
 Core/Src/adc.c \
-Core/Src/fsm.c \
 Core/Src/gpio.c \
 Core/Src/joystick.c \
 Core/Src/main.c \
+Core/Src/morse.c \
 Core/Src/my_gpio.c \
 Core/Src/serial.c \
 Core/Src/stm32f1xx_hal_msp.c \

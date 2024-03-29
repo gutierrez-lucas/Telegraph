@@ -4,122 +4,83 @@
 
 #include "system.h"
 #include "joystick.h"
-#include "fsm.h"
+#include "morse.h"
 
 extern joystick_s js;
-extern sm_t sm;
 
-#define MORSE_UNIT_TIME_MS 100
 
 int main(void){
 
 	init_system();
 
-	char morse_char[6] = {0};
-    uint8_t morse_char_index = 0;
-
+	morse_s morse;
+	
 	while (1){
-		switch(sm.state){
+		switch(morse_get_sm_state(&morse)){
 			case(DOT_DASH_CNT):
-				if(sm.lock == UNLOCKED){
+				if(morse_get_sm_locked_status(&morse) == UNLOCKED){
 					if(js.button.low_duration < 3*MORSE_UNIT_TIME_MS){
-						sm.state = SAVE_DOT;
+						morse_set_sm_state(&morse, SAVE_DOT);
 					}else if(js.button.low_duration <= 7*MORSE_UNIT_TIME_MS){
-						sm.state = SAVE_DASH;
+						morse_set_sm_state(&morse, SAVE_DASH);
 					}else{
-						sm.status = ERR_TIME_OVERFLOW;
-						sm.state = HANDLE_ERROR;
+						morse_set_status(&morse, ERR_TIME_OVERFLOW);
+						morse_set_sm_state(&morse, HANDLE_STATUS);
 					}
 				}
 				break;
 
 			case(SAVE_DOT):
-				morse_char[morse_char_index] = '.';
-				if( morse_char_index > 5){
-					sm.status = ERR_CHAR_OVERFLOW;
-					sm.state = HANDLE_ERROR;
+				if(morse_add_symbol(&morse, DOT)!=OK){
+					morse_set_sm_state(&morse, HANDLE_STATUS);
 					break;
 				}
-				morse_char_index++;
-				sm.state = CHAR_CNT;
+				morse_set_sm_state(&morse, CHAR_CNT);
 				break;
 
 			case(SAVE_DASH):
-				morse_char[morse_char_index] = '-';
-				if( morse_char_index > 5){
-					sm.status = ERR_CHAR_OVERFLOW;
-					sm.state = HANDLE_ERROR;
+				if(morse_add_symbol(&morse, DASH)!=OK){
+					morse_set_sm_state(&morse, HANDLE_STATUS);
 					break;
 				}
-				morse_char_index++;
-				sm.state = CHAR_CNT;
+				morse_set_sm_state(&morse, CHAR_CNT);
 				break;
 
 			case(CHAR_CNT):
 				if(js.button.high_duration < 3*MORSE_UNIT_TIME_MS){
-					sm.state = DOT_DASH_CNT;
+					morse_set_sm_state(&morse, DOT_DASH_CNT);
 				}else{
-					if(morse_char_index < 5){
-						sm.status = ERR_CHAR_INCOMPLETE;
-						sm.state = HANDLE_ERROR;
-						break;
-					}
-					sm.state = SAVE_CHAR;
+					morse_set_sm_state(&morse, SAVE_CHAR);
 				}
 				break;
 			
 			case(SAVE_CHAR):
-				// save char
-				// clear morse_char and morse_char_index
+				if(morse_add_char(&morse)!=OK){
+					morse_set_sm_state(&morse, HANDLE_STATUS);
+					break;
+				}
 				if(js.button.high_duration < 7*MORSE_UNIT_TIME_MS){
-					sm.state = DOT_DASH_CNT;
+					morse_set_sm_state(&morse, DOT_DASH_CNT);
 				}else{
-					sm.state = IDLE;
+					morse_set_sm_state(&morse, SAVE_WORD);
 				}
 				break;
 
 			case(SAVE_WORD):
 				// save word
-				sm.state = IDLE;
+				morse_set_sm_state(&morse, HANDLE_STATUS);
 				break;
 
-			case(HANDLE_ERROR):
-				switch(sm.status){
-					case(ERR_CHAR_OVERFLOW):
-						printf("ERR_CHAR_OVERFLOW\r\n");
-						break;
-					case(ERR_CHAR_INCOMPLETE):
-						printf("ERR_CHAR_INCOMPLETE\r\n");
-						break;
-					case(ERR_TIME_OVERFLOW):
-						printf("ERR_TIME_OVERFLOW\r\n");
-						break;
-					case(ERR_CHAR_UNKNOWN):
-						printf("ERR_CHAR_UNKNOWN\r\n");
-						break;
-				}
-				sm.status = OK;
-				sm.state = IDLE;
+			case(HANDLE_STATUS):
+				morse_handle_status(&morse);
+				morse_set_status(&morse, OK); 
+				morse_set_sm_state(&morse, IDLE);
 				break;
 
 			case(IDLE):
-				// if(js.button.state == JUST_RELEASED){
-				// 	printf("low time: %d\r\n", js.button.low_duration);
-				// 	if(js.button.low_duration!=0){
-				// 		js.button.low_duration = 0;
-				// 	}
-				// 	js.button.state = RELEASED;
-				// }
 				break;
 			
 			default: break;
-			// case(READ):
-			// 	// if(stop == TRUE){
-			// 		break;
-			// 	// }
-			// 	counter++;
-			// 	printf("ADC value %d : %d / %d \r\n", counter, ad_res1, ad_res2);
-			// 	break;
 		}
 	}
 }
