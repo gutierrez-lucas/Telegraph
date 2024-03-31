@@ -16,6 +16,7 @@ morse_s morse;
 #define START_POSITION 0b10000000
 static uint8_t symbol_position_mask = START_POSITION;
 static void test_decoder();
+static bool morse_clear_word(morse_s* self);
 
 void morse_init(morse_s* self){
     printf("Initializing morse object\n");
@@ -66,6 +67,21 @@ bool morse_set_status(morse_s* self, morse_status_t status){
     }
 }
 
+bool morse_save_word(morse_s* self){
+    self->morse_word[self->word_index] = '\0';
+    printf("Word: %s\r\n-------------\r\n", self->morse_word);
+    morse_clear_word(self);
+
+    return true;
+}
+
+static bool morse_clear_word(morse_s* self){
+    printf("Clearing word\r\n");
+    memset(self->morse_word, 0, sizeof(self->morse_word));
+    self->word_index = 0;
+
+    return true;
+}
 #ifdef MORSE_DEBUG 
 static void print_binary(uint8_t bin_char){ // just for dev purposes
     printf("Binary: ");
@@ -199,6 +215,7 @@ bool synthetize_char(morse_s* morse, char target_char){
 static void test_decoder(){
     printf("START MORSE_TEST\r\n");
     synthetize_string(&morse, "HELLO WORLD", strlen("HELLO WORLD")); 
+    morse_clear_word(&morse);
     printf("END MORSE_TEST\r\n");
 }
 #endif

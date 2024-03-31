@@ -56,7 +56,6 @@ int main(void){
 				if( js.button.low_duration != 0 ){
 					js.button.low_duration = 0;
 				}
-				// if(morse_get_sm_locked_status(&morse) == UNLOCKED){
 				if( js.button.state != JUST_RELEASED){
 					printf("FMS: CHAR_CNT HL=%dms\r\n", js.button.high_duration);
 					if(js.button.high_duration < 3*MORSE_UNIT_TIME_MS){
@@ -81,8 +80,8 @@ int main(void){
 				break;
 
 			case(SAVE_WORD):
-				// save word
 				printf("FMS: SAVE_WORD\r\n");
+				morse_save_word(&morse);
 				morse_set_sm_state(&morse, HANDLE_STATUS);
 				break;
 
