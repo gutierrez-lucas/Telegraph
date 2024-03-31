@@ -1,4 +1,6 @@
+#include <stdio.h>
 #include "main.h"
+
 #include "serial.h"
 #include "gpio.h"
 #include "timer.h"

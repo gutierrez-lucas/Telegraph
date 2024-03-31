@@ -4,8 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define MORSE_UNIT_TIME_MS 100
-
+#define MORSE_UNIT_TIME_MS 500
 typedef enum{
 		DOT_DASH_CNT,
 		SAVE_DOT,
@@ -45,13 +44,14 @@ typedef struct morse_str{
 	sm_t sm;
 	morse_status_t status;
 	uint8_t bin_char;
-	uint8_t bin_char_index;
+	uint8_t symbol_counter;
 	char morse_word[100];
 	uint8_t word_index;
 }morse_s;
 
 void morse_init(morse_s* self);
 morse_status_t morse_add_symbol(morse_s* self, morse_sym_t sym);
+morse_status_t morse_add_char(morse_s* self);
 void morse_handle_status(morse_s* self);
 bool morse_set_status(morse_s* self, morse_status_t status);
 bool morse_set_sm_state(morse_s* self, sm_state_t state);

@@ -1,6 +1,7 @@
 #include "main.h"
 #include "timer.h"
 #include "joystick.h"
+#include "morse.h"
 
 extern joystick_s js;
 
@@ -17,6 +18,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim){
 		}
 		if(js.button.state == PRESSED){
 			js.button.low_duration += 10;
+		}else if(js.button.state == JUST_RELEASED){
+			js.button.high_duration += 10;
+			if(js.button.high_duration >= 10*MORSE_UNIT_TIME_MS){
+				js.button.state = RELEASED;
+			}
 		}
 	}
 }
