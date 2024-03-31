@@ -3,10 +3,8 @@
 #include <string.h>
 
 #include "system.h"
-#include "joystick.h"
 #include "morse.h"
 
-extern joystick_s js;
 extern morse_s morse;
 
 int main(void){
@@ -17,20 +15,33 @@ int main(void){
 	while (1){
 		switch(morse_get_sm_state(&morse)){
 			case(DOT_DASH_CNT):
-				if( js.button.high_duration != 0 ){
-					js.button.high_duration = 0;
-				}
-				// if(morse_get_sm_locked_status(&morse) == UNLOCKED){
-				if( js.button.state != PRESSED){
-					printf("FMS: D/DASH LD=%dms\r\n", js.button.low_duration);
-					if(js.button.low_duration < 3*MORSE_UNIT_TIME_MS){
+				switch(get_low_status(&morse)){
+					case(WAITING_FOR_HIGH):
+						break;
+					case(DOT_FOUND):
 						morse_set_sm_state(&morse, SAVE_DOT);
-					}else if(js.button.low_duration <= 7*MORSE_UNIT_TIME_MS){
+						break;
+					case(DASH_FOUND):
 						morse_set_sm_state(&morse, SAVE_DASH);
-					}else{
+						break;
+					case(ERR_LOW):	
 						morse_set_status(&morse, ERR_TIME_OVERFLOW);
 						morse_set_sm_state(&morse, HANDLE_STATUS);
-					}
+						break;
+				}
+				break;
+
+			case(CHAR_CNT):
+				switch(get_high_status(&morse)){
+					case(WAITING_FOR_HIGH):
+						break;
+					case(CONTINUE_CHAR):
+						morse_set_sm_state(&morse, DOT_DASH_CNT);
+						break;
+					case(CONTINUE_WORD):
+						morse_set_sm_state(&morse, SAVE_CHAR);
+						break;
+					default: break;
 				}
 				break;
 
@@ -52,27 +63,13 @@ int main(void){
 				morse_set_sm_state(&morse, CHAR_CNT);
 				break;
 
-			case(CHAR_CNT):
-				if( js.button.low_duration != 0 ){
-					js.button.low_duration = 0;
-				}
-				if( js.button.state != JUST_RELEASED){
-					printf("FMS: CHAR_CNT HL=%dms\r\n", js.button.high_duration);
-					if(js.button.high_duration < 3*MORSE_UNIT_TIME_MS){
-						morse_set_sm_state(&morse, DOT_DASH_CNT);
-					}else{
-						morse_set_sm_state(&morse, SAVE_CHAR);
-					}
-				}
-				break;
-			
 			case(SAVE_CHAR):
-				printf("FMS: SAVE_CHAR\r\n");
+				printf("FMS: SAVE_CHAR -> ");
 				if(morse_add_char(&morse)!=OK){
 					morse_set_sm_state(&morse, HANDLE_STATUS);
 					break;
 				}
-				if(js.button.high_duration < 7*MORSE_UNIT_TIME_MS){
+				if(is_com_complete(&morse)==false){
 					morse_set_sm_state(&morse, DOT_DASH_CNT);
 				}else{
 					morse_set_sm_state(&morse, SAVE_WORD);
@@ -80,18 +77,15 @@ int main(void){
 				break;
 
 			case(SAVE_WORD):
-				printf("FMS: SAVE_WORD\r\n");
+				printf("-------------\r\nFMS: SAVE_WORD --> ");
 				morse_save_word(&morse);
 				morse_set_sm_state(&morse, HANDLE_STATUS);
 				break;
 
 			case(HANDLE_STATUS):
-				printf("FMS: HANDLE_STATUS\r\n");
+				printf("FMS: HANDLE_STATUS --> ");
 				morse_handle_status(&morse);
-				morse_set_status(&morse, OK); 
-				morse_set_sm_state(&morse, IDLE);
-				js.button.low_duration = 0;
-				js.button.high_duration = 0;
+				morse_restart(&morse);
 				break;
 
 			case(IDLE):
