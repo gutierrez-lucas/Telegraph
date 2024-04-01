@@ -4,6 +4,12 @@
 
 joystick_s js = {.button.state = RELEASED, .button.low_duration = 0};
 
+void js_clear_low_pulse_duration(){ js.button.low_duration = 0; }
+void js_clear_high_pulse_duration(){ js.button.high_duration = 0; }
+uint16_t js_get_pulse_low_duration(){ return js.button.low_duration; }
+uint16_t js_get_pulse_high_duration(){ return js.button.high_duration; }
+button_state_t js_get_button_state(){ return js.button.state; }
+
 void print_joystick_position(joystick_position_t position){
     switch(position){
         case(CENTER):

@@ -37,4 +37,9 @@ typedef struct joystick_str{
 
 
 void print_joystick_position(joystick_position_t position);
+uint16_t js_get_pulse_high_duration();
+uint16_t js_get_pulse_low_duration();
+void js_clear_low_pulse_duration();
+void js_clear_high_pulse_duration();
+button_state_t js_get_button_state();
 #endif

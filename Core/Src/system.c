@@ -24,14 +24,14 @@ void init_system(){
 
 	MX_GPIO_Init();
 	MX_TIM2_Init();
-	MX_TIM3_Init();
-	MX_ADC1_Init();
+	// MX_TIM3_Init();
+	// MX_ADC1_Init();
 
 	MX_NVIC_Init();
 
 	HAL_TIM_Base_Start_IT(&htim2);
 	// HAL_TIM_Base_Start_IT(&htim3);
-	HAL_ADC_Start_IT(&hadc1);
+	// HAL_ADC_Start_IT(&hadc1);
 }
 
 static void SystemClock_Config(void){
