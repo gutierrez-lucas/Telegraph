@@ -4,8 +4,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define MORSE_UNIT_TIME_MS 115
-
 typedef enum{			// posible states for the state machine
 	DOT_DASH_CNT,		// acquiring dots and dashes
 	SAVE_DOT,			
@@ -52,6 +50,7 @@ typedef struct morse_str{
 	uint8_t word_index;
 	bool com_complete;			// flag to indicate if the communication is complete
 	pulse_s pulse;
+	uint16_t unit_time_ms;
 }morse_s;
 
 typedef enum{ 			// posible states for each low pulse time
@@ -83,4 +82,8 @@ morse_status_t morse_add_symbol(morse_s* self, morse_sym_t sym);
 morse_status_t morse_add_char(morse_s* self);
 
 bool is_com_complete(morse_s* self);
+
+void set_unit_time_ms(morse_s* self, uint16_t unit_time_ms);
+uint16_t get_unit_time_ms(morse_s* self);
+bool morse_clear_word(morse_s* self);
 #endif

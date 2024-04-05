@@ -21,7 +21,6 @@ static uint8_t decode_char_bin(char encoded_char);              // get binary re
 static char decode_bin_char(uint8_t bin_char);                  // get character from binary representation
 static bool synthetize_char(morse_s* morse, char target_char);
 static bool synthetize_string(morse_s* morse, char* target_string, uint16_t length);
-static bool morse_clear_word(morse_s* self);
 
 void morse_init(morse_s* self){
     printf("Init morse object\r\n");
@@ -34,7 +33,7 @@ void morse_init(morse_s* self){
 }
 
 void morse_restart(morse_s* self){
-    printf("Clear/config morse object\n");
+    printf("Clear/config morse object\r\n");
     self->sm.state = IDLE;
     self->bin_char = 0;
     self->symbol_counter = 0;
@@ -43,6 +42,7 @@ void morse_restart(morse_s* self){
     self->com_complete = false;
     self->pulse.clear_pulse_low_duration();
     self->pulse.clear_pulse_high_duration();
+    self->unit_time_ms = 130;
 #ifdef MORSE_TEST
     static bool once = false;
     if(once == false){
@@ -108,10 +108,10 @@ high_time_t get_high_status(morse_s* self){
 #ifdef MORSE_DEBUG 
 		printf("FMS: CHAR_CNT HL=%dms\r\n", self->pulse.get_pulse_high_duration());
 #endif
-		if(self->pulse.get_pulse_high_duration() < 3*MORSE_UNIT_TIME_MS){
+		if(self->pulse.get_pulse_high_duration() < 3*self->unit_time_ms){
 			return(CONTINUE_CHAR);
 		}else{
-            if(self->pulse.get_pulse_high_duration() > 7*MORSE_UNIT_TIME_MS){
+            if(self->pulse.get_pulse_high_duration() > 7*self->unit_time_ms){
                 self->com_complete = true;
             }
 			return(CONTINUE_WORD);
@@ -129,9 +129,9 @@ low_time_t get_low_status(morse_s* self){
 #ifdef MORSE_DEBUG 
 		printf("FMS: D/DASH LD=%dms\r\n", js.button.low_duration);
 #endif
-		if(self->pulse.get_pulse_low_duration() < 3*MORSE_UNIT_TIME_MS){
+		if(self->pulse.get_pulse_low_duration() < 3*self->unit_time_ms){
 			return DOT_FOUND;
-		}else if(self->pulse.get_pulse_low_duration() <= 7*MORSE_UNIT_TIME_MS){
+		}else if(self->pulse.get_pulse_low_duration() <= 7*self->unit_time_ms){
 			return DASH_FOUND;
 		}else{
 			return ERR_LOW;
@@ -154,12 +154,11 @@ static void clear_symbol_var(morse_s* self){
 bool morse_save_word(morse_s* self){
     self->morse_word[self->word_index] = '\0';
     printf(" %s\r\n-------------\r\n", self->morse_word);
-    morse_clear_word(self);
 
     return true;
 }
 
-static bool morse_clear_word(morse_s* self){
+bool morse_clear_word(morse_s* self){
     memset(self->morse_word, 0, sizeof(self->morse_word));
     self->word_index = 0;
 
@@ -467,4 +466,12 @@ static uint8_t decode_char_bin(char encoded_char){
                 return(0b11110101);
             default: return(0b00000000);
     }
+}
+
+void set_unit_time_ms(morse_s* self, uint16_t unit_time_ms){
+    self->unit_time_ms = unit_time_ms;
+}
+
+uint16_t get_unit_time_ms(morse_s* self){
+    return self->unit_time_ms;
 }

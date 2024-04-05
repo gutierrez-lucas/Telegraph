@@ -1,13 +1,16 @@
 #include "main.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "system.h"
 #include "morse.h"
+#include "serial.h"
 
 extern morse_s morse;
 
 int main(void){
+	bool once = 0;
 
 	init_system();
 	morse_init(&morse);
@@ -86,9 +89,14 @@ int main(void){
 				printf("FMS: HANDLE_STATUS --> ");
 				morse_handle_status(&morse);
 				morse_restart(&morse);
+				once = 0;
 				break;
 
 			case(IDLE):
+				if(once == 0){
+					once = 1;
+					print_menu();
+				}
 				break;
 			
 			default: break;

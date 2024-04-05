@@ -1,7 +1,17 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include "morse.h"
 #include "serial.h"
 #include "main.h"
 #include <errno.h>
 #include <sys/unistd.h> // STDOUT_FILENO, STDERR_FILENO
+
+extern morse_s morse;
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart);
+
+char uart1_in_buffer[10]={'0'};
 
 UART_HandleTypeDef huart1;
 
@@ -28,4 +38,40 @@ void MX_USART1_UART_Init(void){
 	if (HAL_UART_Init(&huart1) != HAL_OK){
 		Error_Handler();
 	}
+	
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
+	static int8_t pre_sm = 0;
+	static int8_t spected_bytes[2] = {2,3};
+
+	if(pre_sm == 1){
+		pre_sm = 0;
+		printf(" to %dms\r\n", atoi(uart1_in_buffer));
+		set_unit_time_ms(&morse, atoi(uart1_in_buffer));
+		uart1_in_buffer[2] = '\0';
+	}else{
+		if(!strcmp(uart1_in_buffer, "GT")){ // get time
+			printf("Current unit time in milliseconds: %d\r\n", get_unit_time_ms(&morse));
+		}else if(!strcmp(uart1_in_buffer, "ST")){
+			pre_sm = 1;
+			printf("Setting Morse Unit Time ");
+		}else{
+			memset(uart1_in_buffer, 0, sizeof(uart1_in_buffer));
+		}
+	}
+	HAL_UART_Receive_IT(&huart1, uart1_in_buffer, spected_bytes[pre_sm]);
+}
+
+void print_menu(){
+	if(morse.morse_word[0] != '\0'){
+		printf("\r\nLast Word: %s", morse.morse_word);
+		morse_clear_word(&morse);
+	}
+	printf("\r\nTelegraph Menu\r\n");
+	printf("\r--------------\r\n");
+	printf("GT: Get Morse Unit Time\r\n");
+	printf("STxxx: Set Morse Unit Time to xxx miliseconds\r\n");
+	printf("\r--------------");
+	printf("\r\n");
 }

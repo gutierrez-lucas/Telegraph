@@ -2,4 +2,5 @@
 #define __SERIAL__H
 int _write(int file, char *data, int len);
 void MX_USART1_UART_Init(void);
+void print_menu();
 #endif

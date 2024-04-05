@@ -8,7 +8,9 @@
 
 extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim3;
-extern ADC_HandleTypeDef hadc1;
+// extern ADC_HandleTypeDef hadc1;
+extern UART_HandleTypeDef huart1;
+extern uint8_t uart1_in_buffer[10];
 
 static void SystemClock_Config(void);
 static void MX_NVIC_Init(void);
@@ -19,7 +21,7 @@ void init_system(){
 
 	MX_USART1_UART_Init();
 
-	printf("\nTelegraph\r\n");
+	printf("\r\nTelegraph\r\n");
     printf("Initializing System\r\n");
 
 	MX_GPIO_Init();
@@ -29,6 +31,7 @@ void init_system(){
 
 	MX_NVIC_Init();
 
+    HAL_UART_Receive_IT(&huart1, uart1_in_buffer, 2); // start waiting for two bytes as a serial interrupt trigger
 	HAL_TIM_Base_Start_IT(&htim2);
 	// HAL_TIM_Base_Start_IT(&htim3);
 	// HAL_ADC_Start_IT(&hadc1);
@@ -78,4 +81,7 @@ static void MX_NVIC_Init(void){
 
 	HAL_NVIC_SetPriority(TIM3_IRQn, 0, 0);
 	HAL_NVIC_EnableIRQ(TIM3_IRQn);
+
+	HAL_NVIC_SetPriority(USART1_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(USART1_IRQn);
 }

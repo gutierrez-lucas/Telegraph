@@ -4,6 +4,7 @@
 #include "morse.h"
 
 extern joystick_s js;
+extern morse_s morse;
 
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
@@ -20,7 +21,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim){
 			js.button.low_duration += 10;
 		}else if(js.button.state == JUST_RELEASED){
 			js.button.high_duration += 10;
-			if(js.button.high_duration >= 10*MORSE_UNIT_TIME_MS){
+			if(js.button.high_duration >= 10*get_unit_time_ms(&morse)){
 				js.button.state = RELEASED;
 			}
 		}
