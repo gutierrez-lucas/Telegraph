@@ -10,6 +10,18 @@ typedef enum{			// posible states for the state morse machine
 	IDLE
 }sm_state_t;
 
+typedef enum{ 			// all posible events for the morse state machine
+	WAITING_FOR_HIGH, 
+	DOT_FOUND,          // less than 3 units
+	DASH_FOUND, 		// more than 3 units but less than 7
+	ERR_LOW,
+	WAITING_FOR_LOW, 	
+	CONTINUE_CHAR,		// less than 3 units
+	CONTINUE_WORD,		// more than 3 units. if its less than 7 units, the complete flag is set to true
+	ERR_HIGH,
+	NO_EVENT
+}sm_event_t;
+
 typedef enum{
 	ERR_CHAR_OVERFLOW,
 	ERR_CHAR_INCOMPLETE,
@@ -21,6 +33,7 @@ typedef enum{
 
 typedef struct sm_str{
 	sm_state_t state;
+	sm_event_t event;
 }sm_t;
 
 typedef enum{
@@ -48,29 +61,17 @@ typedef struct morse_str{
 	uint16_t unit_time_ms;
 }morse_s;
 
-typedef enum{ 			// posible states for each low pulse time
-	WAITING_FOR_HIGH, 
-	DOT_FOUND,          // less than 3 units
-	DASH_FOUND, 		// more than 3 units but less than 7
-	ERR_LOW
-}low_time_t;
-
-typedef enum{			// posible states for each high pulse time
-	WAITING_FOR_LOW, 	
-	CONTINUE_CHAR,		// less than 3 units
-	CONTINUE_WORD,		// more than 3 units. if its less than 7 units, the complete flag is set to true
-	ERR_HIGH
-}high_time_t;
-
 void morse_init(morse_s* self);
+sm_event_t morse_get_sm_event(morse_s* self);
+void morse_fsm_switch(morse_s* self);
 void morse_restart(morse_s* self);
 bool morse_set_sm_state(morse_s* self, sm_state_t state);
 bool morse_set_status(morse_s* self, morse_status_t status);
 sm_state_t morse_get_sm_state(morse_s* self);
 void morse_handle_status(morse_s* self);
 
-high_time_t get_high_status(morse_s* self);
-low_time_t get_low_status(morse_s* self);
+sm_event_t get_high_status(morse_s* self);
+sm_event_t get_low_status(morse_s* self);
 
 bool morse_save_word(morse_s* self);
 morse_status_t morse_add_symbol(morse_s* self, morse_sym_t sym);

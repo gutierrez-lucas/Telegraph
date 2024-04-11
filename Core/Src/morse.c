@@ -32,6 +32,82 @@ void morse_init(morse_s* self){
     morse_restart(self); 
 }
 
+void morse_fsm_switch(morse_s* self){
+    switch(self->sm.state){
+        case(DOT_DASH_CNT):
+            switch(self->sm.event){
+                case(WAITING_FOR_HIGH):
+                    break;
+                case(DOT_FOUND):
+                    printf("FMS: SAVE_DOT\r\n");
+                    if(morse_add_symbol(&morse, DOT)!=OK){
+                        morse_handle_status(&morse);
+                        break;
+                    }
+                    morse_set_sm_state(&morse, CHAR_CNT);
+                    break;
+                case(DASH_FOUND):
+                    printf("FMS: SAVE_DASH\r\n");
+                    if(morse_add_symbol(&morse, DASH)!=OK){
+                        morse_handle_status(&morse);
+                        break;
+                    }
+                    morse_set_sm_state(&morse, CHAR_CNT);
+                    break;
+                case(ERR_LOW):	
+                    morse_set_status(&morse, ERR_TIME_OVERFLOW);
+                    morse_handle_status(&morse);
+                    break;
+                default: break;
+            }
+            break;
+
+        case(CHAR_CNT):
+            switch(self->sm.event){
+                case(WAITING_FOR_HIGH):
+                    break;
+                case(CONTINUE_CHAR):
+                    morse_set_sm_state(&morse, DOT_DASH_CNT);
+                    break;
+                case(CONTINUE_WORD):
+                    printf("FMS: SAVE_CHAR -> ");
+                    if(morse_add_char(&morse)!=OK){
+                        morse_handle_status(&morse);
+                        break;
+                    }
+                    if(is_com_complete(&morse)==false){
+                        morse_set_sm_state(&morse, DOT_DASH_CNT);
+                    }else{
+                        printf("-------------\r\nFMS: SAVE_WORD --> ");
+                        morse_save_word(&morse);
+                        morse_handle_status(&morse);
+                    }
+                    break;
+
+                default: break;
+            }
+            break;
+
+        case(IDLE):
+            break;
+        
+        default: break;
+    }
+}
+
+sm_event_t morse_get_sm_event(morse_s* self){
+    switch(self->sm.state){
+        case(DOT_DASH_CNT):
+            self->sm.event = get_low_status(self);
+            return self->sm.event;
+        case(CHAR_CNT):
+            self->sm.event = get_high_status(self);
+            return self->sm.event;
+        default:
+            return NO_EVENT;
+    }
+}
+
 void morse_restart(morse_s* self){
     printf("Clear/config morse object\r\n");
     self->sm.state = IDLE;
@@ -102,7 +178,7 @@ void morse_handle_status(morse_s* self){
     enable_print_menu();    
 }
 
-high_time_t get_high_status(morse_s* self){
+sm_event_t get_high_status(morse_s* self){
 	if( self->pulse.get_pulse_low_duration() != 0 ){ // waiting for high to low, so clear the previous low to high time
 		self->pulse.clear_pulse_low_duration();
 	}
@@ -123,7 +199,7 @@ high_time_t get_high_status(morse_s* self){
 	}
 }
 
-low_time_t get_low_status(morse_s* self){
+sm_event_t get_low_status(morse_s* self){
 	if( self->pulse.get_pulse_high_duration() != 0 ){
 		self->pulse.clear_pulse_high_duration();
 	}

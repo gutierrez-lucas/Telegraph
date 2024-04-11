@@ -16,67 +16,13 @@ int main(void){
 	enable_print_menu();
 
 	while (1){
-		switch(morse_get_sm_state(&morse)){
-			case(DOT_DASH_CNT):
-				switch(get_low_status(&morse)){
-					case(WAITING_FOR_HIGH):
-						break;
-					case(DOT_FOUND):
-						printf("FMS: SAVE_DOT\r\n");
-						if(morse_add_symbol(&morse, DOT)!=OK){
-							morse_handle_status(&morse);
-							break;
-						}
-						morse_set_sm_state(&morse, CHAR_CNT);
-						break;
-					case(DASH_FOUND):
-						printf("FMS: SAVE_DASH\r\n");
-						if(morse_add_symbol(&morse, DASH)!=OK){
-							morse_handle_status(&morse);
-							break;
-						}
-						morse_set_sm_state(&morse, CHAR_CNT);
-						break;
-					case(ERR_LOW):	
-						morse_set_status(&morse, ERR_TIME_OVERFLOW);
-						morse_handle_status(&morse);
-						break;
-				}
-				break;
-
-			case(CHAR_CNT):
-				switch(get_high_status(&morse)){
-					case(WAITING_FOR_HIGH):
-						break;
-					case(CONTINUE_CHAR):
-						morse_set_sm_state(&morse, DOT_DASH_CNT);
-						break;
-					case(CONTINUE_WORD):
-						printf("FMS: SAVE_CHAR -> ");
-						if(morse_add_char(&morse)!=OK){
-							morse_handle_status(&morse);
-							break;
-						}
-						if(is_com_complete(&morse)==false){
-							morse_set_sm_state(&morse, DOT_DASH_CNT);
-						}else{
-							printf("-------------\r\nFMS: SAVE_WORD --> ");
-							morse_save_word(&morse);
-							morse_handle_status(&morse);
-						}
-								break;
-							default: break;
-						}
-				break;
-
-			case(IDLE):
-				if(is_print_menu_enabled() == true){
-					disable_print_menu();
-					print_menu();
-				}
-				break;
-			
-			default: break;
+		if(morse_get_sm_event(&morse) != NO_EVENT){
+			morse_fsm_switch(&morse);
+		}
+		
+		if(is_print_menu_enabled() == true){
+			disable_print_menu();
+			print_menu();
 		}
 	}
 }
