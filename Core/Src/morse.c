@@ -98,6 +98,8 @@ void morse_handle_status(morse_s* self){
             printf("Unknown status\r\n");
             break;
     }
+    morse_restart(&morse);
+    enable_print_menu();    
 }
 
 high_time_t get_high_status(morse_s* self){

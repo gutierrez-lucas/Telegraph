@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include "morse.h"
 #include "serial.h"
 #include "main.h"
@@ -12,6 +13,7 @@ extern morse_s morse;
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart);
 
 char uart1_in_buffer[10]={'0'};
+static bool once = 0;
 
 UART_HandleTypeDef huart1;
 
@@ -74,4 +76,16 @@ void print_menu(){
 	printf("STxxx: Set Morse Unit Time to xxx miliseconds\r\n");
 	printf("\r--------------");
 	printf("\r\n");
+}
+
+bool is_print_menu_enabled(){
+	return once;
+}
+
+void enable_print_menu(){
+	once = true;
+} 
+
+void disable_print_menu(){
+	once = false;
 }

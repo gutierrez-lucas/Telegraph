@@ -4,14 +4,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-typedef enum{			// posible states for the state machine
+typedef enum{			// posible states for the state morse machine
 	DOT_DASH_CNT,		// acquiring dots and dashes
-	SAVE_DOT,			
-	SAVE_DASH,
 	CHAR_CNT,			// geting a character form the acquired dots and dashes
-	SAVE_CHAR,			// saving the character in the word buffer
-	SAVE_WORD,			// saving the word in the sentence buffer
-	HANDLE_STATUS,		// printing the status of the failed/succeded operation and restarting the state machine
 	IDLE
 }sm_state_t;
 
