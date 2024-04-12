@@ -54,15 +54,16 @@ typedef struct morse_str{
 	morse_status_t status;		// internal status, OK or ERR codes
 	uint8_t bin_char;			// binary representation of the morse character
 	uint8_t symbol_counter;		// how many symbols (dots/dash) are in the current character
-	char morse_word[100];
+	char morse_word[20][20];
 	uint8_t word_index;
+	uint8_t word_counter;
 	bool com_complete;			// flag to indicate if the communication is complete
 	pulse_s pulse;
 	uint16_t unit_time_ms;
 }morse_s;
 
 void morse_init(morse_s* self);
-sm_event_t morse_get_sm_event(morse_s* self);
+sm_event_t morse_fsm_get_event(morse_s* self);
 void morse_fsm_switch(morse_s* self);
 void morse_restart(morse_s* self);
 bool morse_set_sm_state(morse_s* self, sm_state_t state);
@@ -82,4 +83,5 @@ bool is_com_complete(morse_s* self);
 void set_unit_time_ms(morse_s* self, uint16_t unit_time_ms);
 uint16_t get_unit_time_ms(morse_s* self);
 bool morse_clear_word(morse_s* self);
+void clear_word_buffer(morse_s* self);
 #endif

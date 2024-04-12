@@ -49,15 +49,18 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 
 	if(pre_sm == 1){
 		pre_sm = 0;
-		printf(" to %dms\r\n", atoi(uart1_in_buffer));
+		printf(" to %dms\r\n\n", atoi(uart1_in_buffer));
 		set_unit_time_ms(&morse, atoi(uart1_in_buffer));
 		uart1_in_buffer[2] = '\0';
 	}else{
 		if(!strcmp(uart1_in_buffer, "GT")){ // get time
-			printf("Current unit time in milliseconds: %d\r\n", get_unit_time_ms(&morse));
+			printf("[CMD] Current unit time in milliseconds: %d\r\n\n", get_unit_time_ms(&morse));
 		}else if(!strcmp(uart1_in_buffer, "ST")){
 			pre_sm = 1;
-			printf("Setting Morse Unit Time ");
+			printf("[CMD] Setting Morse Unit Time ");
+		}else if(!strcmp(uart1_in_buffer, "CB")){
+			printf("[CMD] Clearing word buffer\r\n\n");
+			clear_word_buffer(&morse);
 		}else{
 			memset(uart1_in_buffer, 0, sizeof(uart1_in_buffer));
 		}
@@ -74,8 +77,10 @@ void print_menu(){
 	printf("\r--------------\r\n");
 	printf("GT: Get Morse Unit Time\r\n");
 	printf("STxxx: Set Morse Unit Time to xxx miliseconds\r\n");
-	printf("\r--------------");
+	printf("CB: Clear word buffer\r\n");
+	printf("\r\n--------------");
 	printf("\r\n");
+	disable_print_menu();
 }
 
 bool is_print_menu_enabled(){

@@ -16,12 +16,11 @@ int main(void){
 	enable_print_menu();
 
 	while (1){
-		if(morse_get_sm_event(&morse) != NO_EVENT){
+		if(morse_fsm_get_event(&morse) != NO_EVENT){
 			morse_fsm_switch(&morse);
 		}
-		
+
 		if(is_print_menu_enabled() == true){
-			disable_print_menu();
 			print_menu();
 		}
 	}

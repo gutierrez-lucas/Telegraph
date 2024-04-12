@@ -23,6 +23,7 @@ void init_system(){
 
 	printf("\r\nTelegraph\r\n");
     printf("Initializing System\r\n");
+	enable_print_menu();
 
 	MX_GPIO_Init();
 	MX_TIM2_Init();
