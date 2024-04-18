@@ -67,7 +67,7 @@ void morse_fsm_switch(morse_s* self){
 
         case(CHAR_CNT):
             switch(self->sm.event){
-                case(WAITING_FOR_HIGH):
+                case(WAITING_FOR_LOW):
                     break;
                 case(CONTINUE_CHAR):
                     morse_set_sm_state(&morse, DOT_DASH_CNT);
