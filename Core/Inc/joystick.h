@@ -19,9 +19,12 @@ typedef enum{
 }joystick_position_t;
 
 typedef enum{
+	JUST_PRESSED,
 	PRESSED, 
 	JUST_RELEASED,
-	RELEASED
+	RELEASED,
+	END_MSG,
+	BUTTON_IDLE
 }button_state_t;
 
 typedef struct button_str{

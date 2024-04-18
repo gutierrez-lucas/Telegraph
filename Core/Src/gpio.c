@@ -11,10 +11,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 	if(GPIO_Pin == GPIO_PIN_9){
 		if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_9) == GPIO_PIN_RESET){
 			// printf("H->L\r\n");
-			if(morse_get_sm_state(&morse) == IDLE){
-				morse_set_sm_state(&morse, DOT_DASH_CNT);
-			}
-			js.button.state = PRESSED;
+			js.button.state = JUST_PRESSED;
 		}else{
 			// printf("L->H\r\n");
 			js.button.state = JUST_RELEASED;

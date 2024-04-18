@@ -15,6 +15,7 @@ static void test_decoder();
 
 #define START_POSITION 0b10000000 // just a mask for readability
 
+extern joystick_s js;
 morse_s morse;
 
 static uint8_t decode_char_bin(char encoded_char);              // get binary representation of a character
@@ -40,7 +41,9 @@ void morse_fsm_switch(morse_s* self){
                 case(WAITING_FOR_HIGH):
                     break;
                 case(DOT_FOUND):
-                    // printf("FMS: SAVE_DOT\r\n");
+#ifdef MORSE_DEBUG 
+                    printf("FMS: SAVE_DOT\r\n");
+#endif
                     printf("·");
                     if(morse_add_symbol(&morse, DOT)!=OK){
                         morse_handle_status(&morse);
@@ -49,7 +52,9 @@ void morse_fsm_switch(morse_s* self){
                     morse_set_sm_state(&morse, CHAR_CNT);
                     break;
                 case(DASH_FOUND):
-                    // printf("FMS: SAVE_DASH\r\n");
+#ifdef MORSE_DEBUG 
+                    printf("FMS: SAVE_DASH\r\n");
+#endif
                     printf("-");
                     if(morse_add_symbol(&morse, DASH)!=OK){
                         morse_handle_status(&morse);
@@ -61,7 +66,7 @@ void morse_fsm_switch(morse_s* self){
                     morse_set_status(&morse, ERR_TIME_OVERFLOW);
                     morse_handle_status(&morse);
                     break;
-                default: break;
+                default: printf("ERROR\r\n");break;
             }
             break;
 
@@ -73,7 +78,9 @@ void morse_fsm_switch(morse_s* self){
                     morse_set_sm_state(&morse, DOT_DASH_CNT);
                     break;
                 case(CONTINUE_WORD):
-                    // printf("FMS: SAVE_CHAR -> ");
+#ifdef MORSE_DEBUG 
+                    printf("FMS: SAVE_CHAR -> ");
+#endif
                     if(morse_add_char(&morse)!=OK){
                         morse_handle_status(&morse);
                         break;
@@ -81,18 +88,22 @@ void morse_fsm_switch(morse_s* self){
                     if(is_com_complete(&morse)==false){
                         morse_set_sm_state(&morse, DOT_DASH_CNT);
                     }else{
-                        // printf("-------------\r\nFMS: SAVE_WORD --> ");
+#ifdef MORSE_DEBUG 
+                        printf("-------------\r\nFMS: SAVE_WORD --> ");
+#endif                        
                         printf("WORD --> ");
                         morse_save_word(&morse);
                         morse_handle_status(&morse);
                     }
                     break;
-
                 default: break;
             }
             break;
 
         case(IDLE):
+            if(self->sm.event == WAITING_FOR_HIGH){
+                morse_set_sm_state(&morse, DOT_DASH_CNT);
+            }
             break;
         
         default: break;
@@ -100,17 +111,78 @@ void morse_fsm_switch(morse_s* self){
 }
 
 sm_event_t morse_fsm_get_event(morse_s* self){
-    switch(self->sm.state){
-        case(DOT_DASH_CNT):
-            self->sm.event = get_low_status(self);
-            return self->sm.event;
-        case(CHAR_CNT):
-            self->sm.event = get_high_status(self);
-            return self->sm.event;
+    sm_event_t event = NO_EVENT;
+
+    switch(self->pulse.get_pulse_state()){
+        case(JUST_PRESSED):
+            if(self->pulse.get_pulse_high_duration() > 0){
+#ifdef MORSE_DEBUG 
+                printf("PULSE: H=%dms\r\n", self->pulse.get_pulse_high_duration());
+#endif
+                if(self->pulse.get_pulse_high_duration() < 3*self->unit_time_ms){
+                    event = CONTINUE_CHAR;
+                }else{
+                    event = CONTINUE_WORD;
+                }
+            }else{
+                event = WAITING_FOR_HIGH;
+            }
+            js.button.state = PRESSED;
+            break;
+
+        case(PRESSED):
+            event = WAITING_FOR_HIGH;
+            break;
+
+        case(JUST_RELEASED): // first evento from low to high, evaluate low duration
+#ifdef MORSE_DEBUG 
+            printf("PULSE: L=%dms\r\n", self->pulse.get_pulse_low_duration());
+#endif
+            if(self->pulse.get_pulse_low_duration() < 3*self->unit_time_ms){
+                event = DOT_FOUND;
+            }else if(self->pulse.get_pulse_low_duration() <= 7*self->unit_time_ms){
+                event = DASH_FOUND;
+            }else{
+                event = ERR_LOW;
+            }
+            js.button.state = RELEASED;
+            break;
+
+        case(RELEASED): // no event on button
+            event = WAITING_FOR_LOW;
+            break;
+
+        case(END_MSG):
+            // if(self->pulse.get_pulse_high_duration() > 7*self->unit_time_ms){
+            self->com_complete = true;
+            // }
+            js.button.state = BUTTON_IDLE;
+            event = CONTINUE_WORD;
+            break;
+
+        case(BUTTON_IDLE):
+            event = NO_EVENT;
+            break;
+
         default:
             return NO_EVENT;
     }
+
+    self->sm.event = event; 
+    return self->sm.event;
 }
+// sm_event_t morse_fsm_get_event(morse_s* self){
+//     switch(self->sm.state){
+//         case(DOT_DASH_CNT):
+//             self->sm.event = get_low_status(self);
+//             return self->sm.event;
+//         case(CHAR_CNT):
+//             self->sm.event = get_high_status(self);
+//             return self->sm.event;
+//         default:
+//             return NO_EVENT;
+//     }
+// }
 
 void morse_restart(morse_s* self){
 #ifdef MORSE_DEBUG 
@@ -184,6 +256,7 @@ void morse_handle_status(morse_s* self){
     morse_restart(&morse);
     // enable_print_menu();    
 }
+
 
 sm_event_t get_high_status(morse_s* self){
 	if( self->pulse.get_pulse_state() != JUST_RELEASED){
