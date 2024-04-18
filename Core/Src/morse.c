@@ -186,9 +186,6 @@ void morse_handle_status(morse_s* self){
 }
 
 sm_event_t get_high_status(morse_s* self){
-	if( self->pulse.get_pulse_low_duration() != 0 ){ // waiting for high to low, so clear the previous low to high time
-		self->pulse.clear_pulse_low_duration();
-	}
 	if( self->pulse.get_pulse_state() != JUST_RELEASED){
 #ifdef MORSE_DEBUG 
 		printf("FMS: CHAR_CNT HL=%dms\r\n", self->pulse.get_pulse_high_duration());
@@ -207,9 +204,6 @@ sm_event_t get_high_status(morse_s* self){
 }
 
 sm_event_t get_low_status(morse_s* self){
-	if( self->pulse.get_pulse_high_duration() != 0 ){
-		self->pulse.clear_pulse_high_duration();
-	}
 	if( self->pulse.get_pulse_state() != PRESSED){
 #ifdef MORSE_DEBUG 
 		printf("FMS: D/DASH LD=%dms\r\n", js.button.low_duration);

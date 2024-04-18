@@ -18,8 +18,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim){
 			counter_ms = 0;
 		}
 		if(js.button.state == PRESSED){
+			if(js.button.high_duration != 0){ js.button.high_duration = 0; }
 			js.button.low_duration += 10;
 		}else if(js.button.state == JUST_RELEASED){
+			if(js.button.low_duration != 0){ js.button.low_duration = 0; }
 			js.button.high_duration += 10;
 			if(js.button.high_duration >= 10*get_unit_time_ms(&morse)){
 				js.button.state = RELEASED;
