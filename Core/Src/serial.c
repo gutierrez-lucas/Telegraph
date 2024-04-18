@@ -60,7 +60,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 			printf("[CMD] Setting Morse Unit Time ");
 		}else if(!strcmp(uart1_in_buffer, "CB")){
 			printf("[CMD] Clearing word buffer\r\n\n");
-			clear_word_buffer(&morse);
+			clear_msg_buffer(&morse);
 		}else{
 			memset(uart1_in_buffer, 0, sizeof(uart1_in_buffer));
 		}
@@ -69,8 +69,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 }
 
 void print_menu(){
-	if(morse.morse_word[0] != '\0'){
-		printf("\r\nLast Word: %s", morse.morse_word);
+	if(morse.msg[0] != '\0'){
+		printf("\r\nLast Word: %s", morse.msg);
 		morse_clear_word(&morse);
 	}
 	printf("\r\nTelegraph Menu\r\n");

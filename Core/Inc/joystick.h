@@ -23,7 +23,7 @@ typedef enum{
 	PRESSED, 
 	JUST_RELEASED,
 	RELEASED,
-	END_MSG,
+	END_SEQUENCE,
 	BUTTON_IDLE
 }button_state_t;
 

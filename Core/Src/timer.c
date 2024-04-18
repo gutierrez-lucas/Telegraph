@@ -24,7 +24,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim){
 			if(js.button.low_duration != 0){ js.button.low_duration = 0; }
 			js.button.high_duration += 10;
 			if(js.button.high_duration >= 10*get_unit_time_ms(&morse)){
-				js.button.state = END_MSG;
+				js.button.state = END_SEQUENCE;
 			}
 		}
 	}else if(htim->Instance == TIM3){
