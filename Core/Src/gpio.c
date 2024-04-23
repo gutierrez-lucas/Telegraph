@@ -11,10 +11,10 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 	if(GPIO_Pin == GPIO_PIN_9){
 		if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_9) == GPIO_PIN_RESET){
 			// printf("H->L\r\n");
-			js.button.state = JUST_PRESSED;
+			js_set_signal_state(SIGNAL_LOW);
 		}else{
 			// printf("L->H\r\n");
-			js.button.state = JUST_RELEASED;
+			js_set_signal_state(SIGNAL_HIGH);
 		}
 	}
 }

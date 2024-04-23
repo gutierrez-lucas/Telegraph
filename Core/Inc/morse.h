@@ -11,16 +11,8 @@ typedef enum{			// posible states for the state morse machine
 }sm_state_t;
 
 typedef enum{ 			// all posible events for the morse state machine
-	WAITING_FOR_HIGH, 
-	DOT_FOUND,          // less than 3 units
-	DASH_FOUND, 		// more than 3 units but less than 7
-	ERR_LOW,
-	WAITING_FOR_LOW, 	
-	CONTINUE_CHAR,		// less than 3 units
-	CONTINUE_WORD,		// more than 3 units. if its less than 7 units, the complete flag is set to true
-	NEW_WORD,
-	ERR_HIGH,
-	END_MSG,
+	PRESSED,
+	RELEASED,
 	NO_EVENT
 }sm_event_t;
 
@@ -45,8 +37,13 @@ typedef enum{
 
 typedef struct pulse_str{
 	uint8_t (*get_pulse_state)();
-	uint16_t (*get_pulse_high_duration)();
-	uint16_t (*get_pulse_low_duration)();
+	uint32_t (*get_pulse_high_duration)();
+	uint32_t (*get_pulse_low_duration)();
+	void (*set_pulse_state)(uint8_t);
+	void (*set_pulse_high_duration)(uint32_t);
+	void (*set_pulse_low_duration)(uint32_t);
+	void (*add_ms_pulse_low)(uint32_t);
+	void (*add_ms_pulse_high)(uint32_t);
 }pulse_s;
 
 typedef struct morse_str{

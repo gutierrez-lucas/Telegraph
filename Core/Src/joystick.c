@@ -2,13 +2,18 @@
 #include "joystick.h"
 #include "stdint.h"
 
-joystick_s js = {.button.state = RELEASED, .button.low_duration = 0};
+joystick_s js = {.button.state = SIGNAL_LOW, .button.low_duration = 0, .button.high_duration = 0, .position = CENTER};
 
+void js_set_signal_state(button_state_t state){ js.button.state = state; }
 void js_clear_low_pulse_duration(){ js.button.low_duration = 0; }
 void js_clear_high_pulse_duration(){ js.button.high_duration = 0; }
-uint16_t js_get_pulse_low_duration(){ return js.button.low_duration; }
-uint16_t js_get_pulse_high_duration(){ return js.button.high_duration; }
-button_state_t js_get_button_state(){ return js.button.state; }
+void js_add_ms_high_duration(uint32_t ms){ js.button.high_duration += ms; }
+void js_add_ms_low_duration(uint32_t ms){ js.button.low_duration += ms; }
+uint32_t js_get_pulse_low_duration(){ return js.button.low_duration; }
+uint32_t js_get_pulse_high_duration(){ return js.button.high_duration; }
+void js_set_pulse_high_duration(uint32_t ms){ js.button.high_duration = ms;}
+void js_set_pulse_low_duration(uint32_t ms){ js.button.low_duration = ms;}
+button_state_t js_get_signal_state(){ return js.button.state; }
 
 void print_joystick_position(joystick_position_t position){
     switch(position){

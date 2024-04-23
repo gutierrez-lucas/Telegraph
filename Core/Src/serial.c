@@ -13,7 +13,7 @@ extern morse_s morse;
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart);
 
 char uart1_in_buffer[10]={'0'};
-static bool once = 0;
+static bool print_once = 0;
 
 UART_HandleTypeDef huart1;
 
@@ -84,13 +84,13 @@ void print_menu(){
 }
 
 bool is_print_menu_enabled(){
-	return once;
+	return print_once;
 }
 
 void enable_print_menu(){
-	once = true;
+	print_once = true;
 } 
 
 void disable_print_menu(){
-	once = false;
+	print_once = false;
 }

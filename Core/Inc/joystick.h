@@ -19,18 +19,15 @@ typedef enum{
 }joystick_position_t;
 
 typedef enum{
-	JUST_PRESSED,
-	PRESSED, 
-	JUST_RELEASED,
-	RELEASED,
-	END_SEQUENCE,
-	BUTTON_IDLE
+	SIGNAL_LOW,
+	SIGNAL_HIGH,
+	SIGNAL_IDLE
 }button_state_t;
 
 typedef struct button_str{
 	button_state_t state;
-	uint16_t low_duration;
-	uint16_t high_duration;
+	uint32_t low_duration;
+	uint32_t high_duration;
 }button_t;
 
 typedef struct joystick_str{
@@ -38,11 +35,15 @@ typedef struct joystick_str{
 	button_t button;
 }joystick_s;
 
-
 void print_joystick_position(joystick_position_t position);
-uint16_t js_get_pulse_high_duration();
-uint16_t js_get_pulse_low_duration();
+void js_set_signal_state(button_state_t state);
+uint32_t js_get_pulse_high_duration();
+uint32_t js_get_pulse_low_duration();
+void js_set_pulse_high_duration(uint32_t ms);
+void js_set_pulse_low_duration(uint32_t ms);
+void js_add_ms_high_duration(uint32_t ms);
+void js_add_ms_low_duration(uint32_t ms);
 void js_clear_low_pulse_duration();
 void js_clear_high_pulse_duration();
-button_state_t js_get_button_state();
+button_state_t js_get_signal_state();
 #endif
