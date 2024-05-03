@@ -271,6 +271,16 @@ static void clear_symbol_var(morse_s* self){
     self->bin_char = 0;
 }
 
+void morse_show_buffer(morse_s* self){
+    printf("======================\r\n");
+    printf("MSG -->  ");
+    printf("%s\r\n", self->msg[0]);
+    for(uint8_t i=1; i<self->word_counter; i++){
+        printf("         %s\r\n", self->msg[i]);
+    }
+    printf("======================\r\n\n");
+}
+
 bool morse_save_word(morse_s* self){
     self->msg[self->word_counter][self->word_index] = '\0';
     if(self->word_counter > 19){

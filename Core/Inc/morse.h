@@ -79,4 +79,5 @@ void set_unit_time_ms(morse_s* self, uint16_t unit_time_ms);
 uint16_t get_unit_time_ms(morse_s* self);
 bool morse_clear_word(morse_s* self);
 void clear_msg_buffer(morse_s* self);
+void morse_show_buffer(morse_s* self);
 #endif

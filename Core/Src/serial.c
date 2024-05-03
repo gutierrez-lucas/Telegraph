@@ -58,6 +58,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 		}else if(!strcmp(uart1_in_buffer, "ST")){
 			pre_sm = 1;
 			printf("[CMD] Setting Morse Unit Time ");
+		}else if(!strcmp(uart1_in_buffer, "SB")){
+			printf("[CMD] Showing word buffer\r\n\n");
+			morse_show_buffer(&morse);
 		}else if(!strcmp(uart1_in_buffer, "CB")){
 			printf("[CMD] Clearing word buffer\r\n\n");
 			clear_msg_buffer(&morse);
@@ -78,6 +81,7 @@ void print_menu(){
 	printf("GT: Get Morse Unit Time\r\n");
 	printf("STxxx: Set Morse Unit Time to xxx miliseconds\r\n");
 	printf("CB: Clear word buffer\r\n");
+	printf("SB: Show word buffer\r\n");
 	printf("\r\n--------------");
 	printf("\r\n");
 	disable_print_menu();
