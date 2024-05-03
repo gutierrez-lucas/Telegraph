@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define USE_JOYSTICK
 typedef enum{			// posible states for the state morse machine
 	DOT_DASH_CNT,		// acquiring dots and dashes
 	CHAR_CNT,			// geting a character form the acquired dots and dashes

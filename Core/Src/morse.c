@@ -4,7 +4,6 @@
 #include <string.h>
 
 #include "morse.h"
-#include "joystick.h"
 #include "serial.h"
 
 // #define MORSE_DEBUG
@@ -13,10 +12,12 @@
 static void test_decoder();
 #endif
 // #define MORSE_DECODE_USING_LUT
-
 #define START_POSITION 0b10000000 // just a mask for readability
 
+#ifdef USE_JOYSTICK
+#include "joystick.h"
 extern joystick_s js;
+#endif
 morse_s morse;
 
 static uint8_t decode_char_bin(char encoded_char);              // get binary representation of a character
@@ -29,12 +30,14 @@ bool pete = false;
 void morse_init(morse_s* self){
     printf("Init morse object\r\n");
     self->unit_time_ms = 130;
+#ifdef USE_JOYSTICK
     self->pulse.get_pulse_high_duration = js_get_pulse_high_duration;
     self->pulse.get_pulse_low_duration = js_get_pulse_low_duration;
     self->pulse.get_pulse_state = js_get_signal_state;
     self->pulse.set_pulse_state = js_set_signal_state;
     self->pulse.set_pulse_high_duration = js_set_pulse_high_duration;
     self->pulse.set_pulse_low_duration = js_set_pulse_low_duration;
+#endif
     self->word_counter = 0;
     morse_restart(self); 
 }

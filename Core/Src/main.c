@@ -8,8 +8,6 @@
 #include "serial.h"
 
 extern morse_s morse;
-extern bool pete;
-
 
 int main(void){
 

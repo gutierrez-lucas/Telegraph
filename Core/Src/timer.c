@@ -3,9 +3,6 @@
 #include "joystick.h"
 #include "morse.h"
 
-extern joystick_s js;
-extern morse_s morse;
-
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 
@@ -17,15 +14,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim){
 			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13); 
 			counter_ms = 0;
 		}
-		// if(js_get_button_state() == SIGNAL_LOW){
-		// 	if(js_get_pulse_high_duration() != 0){ js_clear_high_pulse_duration(); }
-		// 	js_add_ms_low_duration(10);
-		// }else if(js_get_button_state() == SIGNAL_HIGH){
-		// 	if(js_get_pulse_low_duration() != 0){ js_clear_low_pulse_duration(); }
-		// 	js_add_ms_high_duration(10);
-		// }
-	}else if(htim->Instance == TIM3){
-
 	}
 }
 
