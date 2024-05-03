@@ -24,6 +24,8 @@ static char decode_bin_char(uint8_t bin_char);                  // get character
 static bool synthetize_char(morse_s* morse, char target_char);
 static bool synthetize_string(morse_s* morse, char* target_string, uint16_t length);
 
+bool pete = false;
+
 void morse_init(morse_s* self){
     printf("Init morse object\r\n");
     self->unit_time_ms = 130;
@@ -115,7 +117,6 @@ void morse_fsm_switch(morse_s* self){
                 case(PRESSED):
                     self->pulse.set_pulse_high_duration(HAL_GetTick() - auxiliar_time);
                     get_once = true;
-                    auxiliar_time = 0;
 #ifdef MORSE_DEBUG 
                     printf("PULSE: H=%dms\r\n", self->pulse.get_pulse_high_duration());
 #endif

@@ -8,6 +8,8 @@
 #include "serial.h"
 
 extern morse_s morse;
+extern bool pete;
+
 
 int main(void){
 
@@ -16,6 +18,7 @@ int main(void){
 	enable_print_menu();
 
 	while (1){
+
 		if(morse_fsm_get_event(&morse) != NO_EVENT){
 			morse_fsm_switch(&morse);
 		}
