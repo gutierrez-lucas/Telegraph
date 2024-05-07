@@ -72,10 +72,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 }
 
 void print_menu(){
-	if(morse.msg[0] != '\0'){
-		printf("\r\nLast Word: %s", morse.msg);
-		morse_clear_word(&morse);
-	}
 	printf("\r\nTelegraph Menu\r\n");
 	printf("\r--------------\r\n");
 	printf("GT: Get Morse Unit Time\r\n");

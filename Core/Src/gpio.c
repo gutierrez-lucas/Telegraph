@@ -6,8 +6,8 @@
 extern joystick_s js;
 extern morse_s morse;
 
-#define turn_led_off() HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_SET)
-#define turn_led_on() HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_RESET)
+#define turn_led_off() HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_RESET)
+#define turn_led_on() HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_SET)
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 	HAL_EXTI_ClearPending(GPIO_Pin, EXTI_TRIGGER_RISING_FALLING);
@@ -44,7 +44,7 @@ void MX_GPIO_Init(void){
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_RESET);
 
 	GPIO_InitStruct.Pin = GPIO_PIN_9; // switch
 	GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;

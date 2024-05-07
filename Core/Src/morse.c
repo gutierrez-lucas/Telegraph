@@ -20,16 +20,81 @@ extern joystick_s js;
 #endif
 morse_s morse;
 
+typedef enum{			// posible states for the state morse machine
+	SYM_CNT,		// acquiring dots and dashes
+	CHAR_CNT,			// geting a character form the acquired dots and dashes
+	IDLE
+}sm_state_t;
+
+typedef enum{ 			// all posible events for the morse state machine
+	PRESSED,
+	RELEASED,
+	NO_EVENT
+}sm_event_t;
+
+typedef enum{
+	ERR_CHAR_OVERFLOW,
+	ERR_CHAR_INCOMPLETE,
+	ERR_TIME_OVERFLOW,
+	ERR_CHAR_UNKNOWN,
+	FAIL,
+	OK
+}morse_status_t;
+
+typedef struct sm_str{
+	sm_state_t state;
+	sm_event_t event;
+}sm_t;
+
+typedef enum{
+	DOT,
+	DASH
+}morse_sym_t;
+
+typedef struct pulse_str{
+	uint8_t (*get_pulse_state)();
+	uint32_t (*get_pulse_high_duration)();
+	uint32_t (*get_pulse_low_duration)();
+	void (*set_pulse_state)(uint8_t);
+	void (*set_pulse_high_duration)(uint32_t);
+	void (*set_pulse_low_duration)(uint32_t);
+	void (*add_ms_pulse_low)(uint32_t);
+	void (*add_ms_pulse_high)(uint32_t);
+}pulse_s;
+
+typedef struct morse_str{
+	char msg[20][20];
+	sm_t sm;					// state machine struct
+	morse_status_t status;		// internal status, OK or ERR codes
+	uint8_t bin_char;			// binary representation of the morse character
+	uint8_t symbol_counter;		// how many symbols (dots/dash) are in the current character
+	uint8_t word_index;
+	uint8_t word_counter;
+	pulse_s pulse;
+	uint16_t unit_time_ms;
+}morse_s;
+
 static uint8_t decode_char_bin(char encoded_char);              // get binary representation of a character
 static char decode_bin_char(uint8_t bin_char);                  // get character from binary representation
 static bool synthetize_char(morse_s* morse, char target_char);
 static bool synthetize_string(morse_s* morse, char* target_string, uint16_t length);
+static sm_event_t morse_fsm_get_event(morse_s* self);
+static void morse_fsm_switch(morse_s* self);
+static void morse_restart(morse_s* self);
+static bool morse_set_sm_state(morse_s* self, sm_state_t state);
+static sm_state_t morse_get_sm_state(morse_s* self);
+static bool morse_set_status(morse_s* self, morse_status_t status);
+static morse_status_t morse_get_status(morse_s* self);
+static void morse_handle_status(morse_s* self);
+static bool morse_save_word(morse_s* self);
+static morse_status_t morse_add_symbol(morse_s* self, morse_sym_t sym);
+static morse_status_t morse_add_char(morse_s* self);
 
-bool pete = false;
 
-void morse_init(morse_s* self){
+void morse_init(morse_s* self, uint16_t start_unit_time){
     printf("Init morse object\r\n");
-    self->unit_time_ms = 130;
+    self->status = OK;
+    self->unit_time_ms = start_unit_time;
 #ifdef USE_JOYSTICK
     self->pulse.get_pulse_high_duration = js_get_pulse_high_duration;
     self->pulse.get_pulse_low_duration = js_get_pulse_low_duration;
@@ -42,7 +107,17 @@ void morse_init(morse_s* self){
     morse_restart(self); 
 }
 
-void morse_restart(morse_s* self){
+void morse_run(morse_s* self){
+    if(morse_fsm_get_event(self) != NO_EVENT){
+        morse_fsm_switch(self);
+    }
+
+    if(is_print_menu_enabled() == true){
+        print_menu();
+    }
+}
+
+static void morse_restart(morse_s* self){
 #ifdef MORSE_DEBUG 
     printf("Clear/config morse object\r\n");
 #endif
@@ -50,7 +125,9 @@ void morse_restart(morse_s* self){
     self->bin_char = 0;
     self->symbol_counter = 0;
     self->word_index = 0;
-    self->status = OK;
+    if(morse_get_status(self) != ERR_TIME_OVERFLOW){
+        self->status = OK;
+    }
     self->pulse.set_pulse_high_duration(0);
     self->pulse.set_pulse_low_duration(0);
     self->pulse.set_pulse_state(SIGNAL_IDLE);
@@ -63,17 +140,27 @@ void morse_restart(morse_s* self){
 #endif
 }
 
-void morse_fsm_switch(morse_s* self){
+static void morse_fsm_switch(morse_s* self){
     static bool get_once = true;
     static uint32_t auxiliar_time = 0;
 
     switch(self->sm.state){
-        case(DOT_DASH_CNT):
+        case(SYM_CNT):
             switch(self->sm.event){
                 case(PRESSED):
                     if(get_once == true){
                         get_once = false;
                         auxiliar_time = HAL_GetTick();
+                    }
+                    self->pulse.set_pulse_low_duration(HAL_GetTick() - auxiliar_time);
+                    if( self->pulse.get_pulse_low_duration() > (uint32_t)7*self->unit_time_ms){
+                        get_once = true;
+#ifdef MORSE_DEBUG 
+                        printf("FMS: LOW_TIMEOUT");
+#endif
+                        morse_set_status(&morse, ERR_TIME_OVERFLOW);
+                        morse_set_sm_state(&morse, IDLE);
+                        morse_handle_status(&morse);
                     }
                     break;
 
@@ -124,7 +211,7 @@ void morse_fsm_switch(morse_s* self){
                     printf("PULSE: H=%dms\r\n", self->pulse.get_pulse_high_duration());
 #endif
                     if(self->pulse.get_pulse_high_duration() < 3*self->unit_time_ms){
-                        morse_set_sm_state(&morse, DOT_DASH_CNT);
+                        morse_set_sm_state(&morse, SYM_CNT);
                     }else if(self->pulse.get_pulse_high_duration() < 7*self->unit_time_ms){
 #ifdef MORSE_DEBUG 
                         printf("FMS: SAVE_CHAR -> ");
@@ -133,7 +220,7 @@ void morse_fsm_switch(morse_s* self){
                             morse_handle_status(&morse);
                             break;
                         }
-                        morse_set_sm_state(&morse, DOT_DASH_CNT);
+                        morse_set_sm_state(&morse, SYM_CNT);
                     }else if(self->pulse.get_pulse_high_duration() >= 7*self->unit_time_ms){
 #ifdef MORSE_DEBUG 
                         printf("FMS: NEW_WORD -> ");
@@ -144,7 +231,7 @@ void morse_fsm_switch(morse_s* self){
                         }
                         self->msg[self->word_counter][self->word_index] = ' ';
                         self->word_index++;
-                        morse_set_sm_state(&morse, DOT_DASH_CNT);
+                        morse_set_sm_state(&morse, SYM_CNT);
                     }
                     self->pulse.set_pulse_high_duration(0);
                     
@@ -181,7 +268,7 @@ void morse_fsm_switch(morse_s* self){
 
         case(IDLE):
             if(self->sm.event == PRESSED){
-                morse_set_sm_state(&morse, DOT_DASH_CNT);
+                morse_set_sm_state(&morse, SYM_CNT);
             }else{
                 break;
             }
@@ -191,15 +278,24 @@ void morse_fsm_switch(morse_s* self){
     }
 }
 
-sm_event_t morse_fsm_get_event(morse_s* self){
+static sm_event_t morse_fsm_get_event(morse_s* self){
     sm_event_t event = NO_EVENT;
 
     switch(self->pulse.get_pulse_state()){
         case(SIGNAL_LOW):
+            if(morse_get_status(self) == ERR_TIME_OVERFLOW){
+                event = NO_EVENT;
+                break;
+            }
             event = PRESSED;
             break;
 
         case(SIGNAL_HIGH):
+            if(morse_get_status(self) == ERR_TIME_OVERFLOW){
+                morse_set_status(self, OK);
+                event = NO_EVENT;
+                break;
+            }
             event = RELEASED;
             break;
 
@@ -216,7 +312,7 @@ sm_event_t morse_fsm_get_event(morse_s* self){
 }
 
 static inline bool check_state(sm_state_t state){ return(state <= IDLE ? true : false); }
-bool morse_set_sm_state(morse_s* self, sm_state_t state){
+static bool morse_set_sm_state(morse_s* self, sm_state_t state){
     if(check_state(state)){
         self->sm.state = state;
         return true;
@@ -226,7 +322,7 @@ bool morse_set_sm_state(morse_s* self, sm_state_t state){
 }
 
 static inline bool check_status(morse_status_t status){ return(status <= OK ? true : false); }
-bool morse_set_status(morse_s* self, morse_status_t status){
+static bool morse_set_status(morse_s* self, morse_status_t status){
     if(check_status(status)){
         self->status = status;
         return true;
@@ -235,11 +331,15 @@ bool morse_set_status(morse_s* self, morse_status_t status){
     }
 }
 
-sm_state_t morse_get_sm_state(morse_s* self){
+static morse_status_t morse_get_status(morse_s* self){
+    return self->status;
+}
+
+static sm_state_t morse_get_sm_state(morse_s* self){
     return self->sm.state;
 }
 
-void morse_handle_status(morse_s* self){
+static void morse_handle_status(morse_s* self){
     switch(self->status){
         case(OK):
 #ifdef MORSE_DEBUG 
@@ -247,19 +347,19 @@ void morse_handle_status(morse_s* self){
 #endif
             break;
         case(ERR_CHAR_OVERFLOW):
-            printf("RES: ERR_CHAR_OVERFLOW\r\n");
+            printf("----\r\nRES: ERR_CHAR_OVERFLOW\r\n----\r\n");
             break;
         case(ERR_CHAR_INCOMPLETE):
-            printf("RES: ERR_CHAR_INCOMPLETE\r\n");
+            printf("----\r\nRES: ERR_CHAR_INCOMPLETE\r\n----\r\n");
             break;
         case(ERR_TIME_OVERFLOW):
-            printf("RES: ERR_TIME_OVERFLOW\r\n");
+            printf("----\r\nRES: ERR_TIME_OVERFLOW\r\n----\r\n");
             break;
         case(ERR_CHAR_UNKNOWN):
-            printf("RES: ERR_CHAR_UNKNOWN\r\n");
+            printf("----\r\nRES: ERR_CHAR_UNKNOWN\r\n----\r\n");
             break;
         default: 
-            printf("RES: Unknown status\r\n");
+            printf("----\r\nRES: Unknown status\r\n----\r\n");
             break;
     }
     morse_restart(&morse);
@@ -284,7 +384,7 @@ void morse_show_buffer(morse_s* self){
     printf("======================\r\n\n");
 }
 
-bool morse_save_word(morse_s* self){
+static bool morse_save_word(morse_s* self){
     self->msg[self->word_counter][self->word_index] = '\0';
     if(self->word_counter > 19){
         printf("Max amount of words in buffer. Continuing from buffer beginning.\r\n");
@@ -315,7 +415,7 @@ void clear_msg_buffer(morse_s* self){
 }
 
 #ifdef MORSE_DEBUG 
-static void print_binary(uint8_t bin_char){ // just for dev purposes
+static static void print_binary(uint8_t bin_char){ // just for dev purposes
     printf("Binary: ");
     for(int i = 7; i >= 0; i--){
         printf("%d", (bin_char & (1 << i)) >> i);
@@ -324,8 +424,8 @@ static void print_binary(uint8_t bin_char){ // just for dev purposes
 }
 #endif
 
-morse_status_t morse_add_symbol(morse_s* self, morse_sym_t sym){
-    static uint8_t symbol_position_mask = START_POSITION;
+static morse_status_t morse_add_symbol(morse_s* self, morse_sym_t sym){
+    static uint8_t symbol_position_mask = START_POSITION; //
 
     if(self->symbol_counter < 6){
         if(sym == DOT){
@@ -359,15 +459,11 @@ morse_status_t morse_add_symbol(morse_s* self, morse_sym_t sym){
     }
 }
 
-morse_status_t morse_add_char(morse_s* self){
+static morse_status_t morse_add_char(morse_s* self){
     morse_status_t ret; 
-#ifdef MORSE_DEBUG 
-    print_binary(self->bin_char);
-#endif
+
     self->bin_char |= self->symbol_counter;    
-#ifdef MORSE_DEBUG 
-    print_binary(self->bin_char);
-#endif
+
     self->msg[self->word_counter][self->word_index] = decode_bin_char(self->bin_char);
 
     if(self->msg[self->word_counter][self->word_index] != 0){
@@ -389,7 +485,7 @@ morse_status_t morse_add_char(morse_s* self){
     return ret;
 }
 
-bool synthetize_char(morse_s* morse, char target_char){
+static bool synthetize_char(morse_s* morse, char target_char){
 #ifdef MORSE_DEBUG 
     printf("Target char: %c\r\n", target_char);
 #endif
@@ -419,7 +515,7 @@ bool synthetize_char(morse_s* morse, char target_char){
 }
 
 #ifdef MORSE_TEST
-static void test_decoder(){
+static static void test_decoder(){
     printf("START MORSE_TEST\r\n");
     synthetize_string(&morse, "HELLO WORLD", strlen("HELLO WORLD")); 
     morse_clear_word(&morse);
@@ -427,7 +523,7 @@ static void test_decoder(){
 }
 #endif
 
-bool synthetize_string(morse_s* morse, char* target_string, uint16_t length){
+static bool synthetize_string(morse_s* morse, char* target_string, uint16_t length){
     for(uint8_t i=0; i<length; i++){
         if(target_string[i] == ' '){
             // add a not-so-trivial space

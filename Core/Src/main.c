@@ -12,18 +12,11 @@ extern morse_s morse;
 int main(void){
 
 	init_system();
-	morse_init(&morse);
+	morse_init(&morse, 130);
 	enable_print_menu();
 
 	while (1){
-
-		if(morse_fsm_get_event(&morse) != NO_EVENT){
-			morse_fsm_switch(&morse);
-		}
-
-		if(is_print_menu_enabled() == true){
-			print_menu();
-		}
+		morse_run(&morse);
 	}
 }
 
