@@ -54,7 +54,7 @@ After doing that, click on GENERATE CODE; You should see the new Makefile projec
 
 Use the following schemematic:
 
-![Schematic](/Documents/schematic.png)
+![Schematic](/Documents/Schematic.png)
 
 ## Usage
 
